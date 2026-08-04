@@ -1,0 +1,816 @@
+<title>Poletuška — sběr pylu čtyřmi ročními obdobími</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<style>
+  :root {
+    /* paleta — přírodovědný herbář + medové světlo */
+    --ink:        #4a3524;
+    --ink-soft:   #7a6146;
+    --paper:      #f3ead4;
+    --paper-edge: #e4d6b4;
+    --amber:      #e29a2c;
+    --nectar:     #b5701a;
+    --honey-glow: #ffd66b;
+    --panel:      rgba(243,234,212,0.92);
+    --panel-line: rgba(74,53,36,0.18);
+    --shadow:     rgba(74,53,36,0.22);
+    --hud-text:   #4a3524;
+    --serif: Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+    --sans: ui-rounded, "SF Pro Rounded", system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink:        #f0e4c8;
+      --ink-soft:   #b8a884;
+      --paper:      #2a2018;
+      --paper-edge: #1d1610;
+      --amber:      #f0ab3c;
+      --nectar:     #e0913a;
+      --honey-glow: #ffde8a;
+      --panel:      rgba(36,28,20,0.90);
+      --panel-line: rgba(240,228,200,0.16);
+      --shadow:     rgba(0,0,0,0.45);
+      --hud-text:   #f0e4c8;
+    }
+  }
+  :root[data-theme="light"] {
+    --ink:#4a3524; --ink-soft:#7a6146; --paper:#f3ead4; --paper-edge:#e4d6b4;
+    --amber:#e29a2c; --nectar:#b5701a; --honey-glow:#ffd66b;
+    --panel:rgba(243,234,212,0.92); --panel-line:rgba(74,53,36,0.18);
+    --shadow:rgba(74,53,36,0.22); --hud-text:#4a3524;
+  }
+  :root[data-theme="dark"] {
+    --ink:#f0e4c8; --ink-soft:#b8a884; --paper:#2a2018; --paper-edge:#1d1610;
+    --amber:#f0ab3c; --nectar:#e0913a; --honey-glow:#ffde8a;
+    --panel:rgba(36,28,20,0.90); --panel-line:rgba(240,228,200,0.16);
+    --shadow:rgba(0,0,0,0.45); --hud-text:#f0e4c8;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; }
+  body {
+    font-family: var(--sans);
+    color: var(--hud-text);
+    background: #10100c;
+    -webkit-user-select: none; user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: none;
+  }
+  #scene { display: block; width: 100vw; height: 100dvh; cursor: none; }
+
+  /* ---- HUD ---- */
+  .hud {
+    position: fixed; inset: 0; pointer-events: none;
+    padding: max(14px, env(safe-area-inset-top)) 16px 16px;
+    display: flex; flex-direction: column; justify-content: space-between;
+  }
+  .hud-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+
+  .season-card {
+    pointer-events: auto;
+    background: var(--panel);
+    border: 1px solid var(--panel-line);
+    border-radius: 13px;
+    padding: 10px 14px;
+    box-shadow: 0 6px 22px var(--shadow);
+    backdrop-filter: blur(7px);
+    min-width: 168px;
+  }
+  .season-eyebrow {
+    font-family: var(--sans);
+    font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ink-soft); margin: 0 0 2px;
+  }
+  .season-name {
+    font-family: var(--serif); font-size: 22px; font-weight: 700;
+    color: var(--ink); margin: 0; line-height: 1.05;
+  }
+  .season-sub {
+    font-family: var(--serif); font-style: italic;
+    font-size: 12.5px; color: var(--ink-soft); margin: 1px 0 8px;
+  }
+  .meter {
+    height: 7px; border-radius: 4px; overflow: hidden;
+    background: color-mix(in srgb, var(--ink) 15%, transparent);
+  }
+  .meter > i {
+    display: block; height: 100%; width: 0%;
+    background: linear-gradient(90deg, var(--amber), var(--honey-glow));
+    transition: width 0.4s ease;
+  }
+
+  .tally {
+    display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .chip {
+    pointer-events: auto;
+    background: var(--panel);
+    border: 1px solid var(--panel-line);
+    border-radius: 11px;
+    padding: 7px 11px;
+    display: flex; gap: 7px; align-items: center;
+    box-shadow: 0 5px 18px var(--shadow);
+    backdrop-filter: blur(7px);
+    font-variant-numeric: tabular-nums;
+  }
+  .chip .val { font-size: 17px; font-weight: 700; color: var(--ink); }
+  .chip .lbl {
+    font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .btn {
+    pointer-events: auto; cursor: pointer;
+    background: var(--panel); color: var(--ink);
+    border: 1px solid var(--panel-line); border-radius: 11px;
+    padding: 8px 12px; font-family: var(--sans); font-size: 13px; font-weight: 600;
+    box-shadow: 0 5px 18px var(--shadow); backdrop-filter: blur(7px);
+  }
+  .btn:hover { border-color: var(--amber); color: var(--nectar); }
+  .btn:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+
+  .hud-hint {
+    align-self: center;
+    font-family: var(--serif); font-style: italic; font-size: 13px;
+    color: var(--hud-text); opacity: 0.72;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.35);
+    transition: opacity 0.6s ease;
+  }
+
+  /* ---- Deník ---- */
+  .journal {
+    position: fixed; top: 0; right: 0; height: 100dvh; width: min(340px, 86vw);
+    background: var(--paper);
+    border-left: 1px solid var(--panel-line);
+    box-shadow: -14px 0 40px var(--shadow);
+    transform: translateX(102%); transition: transform 0.42s cubic-bezier(.4,0,.15,1);
+    z-index: 20; display: flex; flex-direction: column;
+    pointer-events: auto;
+  }
+  .journal.open { transform: translateX(0); }
+  .journal-head {
+    padding: 20px 20px 12px; border-bottom: 1px solid var(--panel-line);
+    display: flex; justify-content: space-between; align-items: baseline;
+  }
+  .journal-head h2 {
+    font-family: var(--serif); font-size: 21px; margin: 0; color: var(--ink);
+  }
+  .journal-head .sub {
+    font-family: var(--serif); font-style: italic; font-size: 12px;
+    color: var(--ink-soft);
+  }
+  .journal-close {
+    cursor: pointer; background: none; border: none; color: var(--ink-soft);
+    font-size: 24px; line-height: 1; padding: 0 4px;
+  }
+  .journal-close:hover { color: var(--nectar); }
+  .specimens {
+    overflow-y: auto; padding: 14px 16px 28px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  }
+  .specimen {
+    border: 1px solid var(--panel-line); border-radius: 12px;
+    background: color-mix(in srgb, var(--paper-edge) 40%, transparent);
+    padding: 10px; text-align: center;
+  }
+  .specimen.locked { opacity: 0.5; }
+  .specimen canvas { width: 74px; height: 74px; display: block; margin: 0 auto 6px; }
+  .specimen .name {
+    font-family: var(--serif); font-size: 13px; font-weight: 700; color: var(--ink);
+    line-height: 1.15; margin: 0;
+  }
+  .specimen .latin {
+    font-family: var(--serif); font-style: italic; font-size: 10.5px;
+    color: var(--ink-soft); margin: 1px 0 4px;
+  }
+  .specimen .shape {
+    font-size: 8.5px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .specimen .count {
+    font-size: 11px; color: var(--nectar); font-weight: 700;
+    font-variant-numeric: tabular-nums; margin-top: 3px;
+  }
+
+  /* ---- Úvodní obrazovka ---- */
+  .intro {
+    position: fixed; inset: 0; z-index: 40;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 4px; text-align: center; padding: 24px;
+    background: radial-gradient(120% 90% at 50% 30%,
+      color-mix(in srgb, var(--honey-glow) 22%, transparent), transparent 60%),
+      var(--paper);
+    transition: opacity 0.7s ease; pointer-events: auto;
+  }
+  .intro.hide { opacity: 0; pointer-events: none; }
+  .intro .kicker {
+    font-family: var(--sans); font-size: 11px; letter-spacing: 0.34em;
+    text-transform: uppercase; color: var(--nectar); margin: 0 0 6px;
+  }
+  .intro h1 {
+    font-family: var(--serif); font-weight: 700; color: var(--ink);
+    font-size: clamp(46px, 12vw, 104px); margin: 0; line-height: 0.9;
+    text-wrap: balance;
+  }
+  .intro .tag {
+    font-family: var(--serif); font-style: italic;
+    font-size: clamp(15px, 4vw, 20px); color: var(--ink-soft);
+    margin: 8px 0 26px; max-width: 30ch; text-wrap: balance;
+  }
+  .start-btn {
+    cursor: pointer; font-family: var(--sans); font-weight: 700;
+    font-size: 17px; color: #3a2a18;
+    background: linear-gradient(180deg, var(--honey-glow), var(--amber));
+    border: none; border-radius: 999px; padding: 15px 38px;
+    box-shadow: 0 10px 30px color-mix(in srgb, var(--amber) 45%, transparent);
+  }
+  .start-btn:hover { transform: translateY(-1px); }
+  .start-btn:focus-visible { outline: 3px solid var(--nectar); outline-offset: 3px; }
+  .how {
+    margin-top: 22px; font-family: var(--serif); font-size: 13.5px;
+    color: var(--ink-soft); max-width: 34ch; line-height: 1.5; text-wrap: balance;
+  }
+  .theme-toggle {
+    position: fixed; bottom: 14px; left: 14px; z-index: 45;
+  }
+  @media (max-width: 560px) {
+    .season-card { min-width: 148px; }
+    .chip .lbl { display: none; }
+  }
+</style>
+
+<canvas id="scene"></canvas>
+
+<div class="hud" id="hud" hidden>
+  <div class="hud-top">
+    <div class="season-card">
+      <p class="season-eyebrow">Roční období</p>
+      <p class="season-name" id="seasonName">Jaro</p>
+      <p class="season-sub" id="seasonSub">první květy raší</p>
+      <div class="meter"><i id="seasonMeter"></i></div>
+    </div>
+    <div class="tally">
+      <div class="chip"><span class="val" id="pollenCount">0</span><span class="lbl">zrnek pylu</span></div>
+      <div class="chip"><span class="val" id="speciesCount">0/12</span><span class="lbl">druhů</span></div>
+      <button class="btn" id="journalBtn" aria-label="Otevřít deník">Deník</button>
+    </div>
+  </div>
+  <p class="hud-hint" id="hudHint">Veď včelku kurzorem — leť k květům a nasbírej pyl</p>
+</div>
+
+<aside class="journal" id="journal" aria-label="Terénní deník pylů">
+  <div class="journal-head">
+    <div>
+      <h2>Terénní deník</h2>
+      <span class="sub" id="journalSub">nalezené druhy pylu</span>
+    </div>
+    <button class="journal-close" id="journalClose" aria-label="Zavřít deník">×</button>
+  </div>
+  <div class="specimens" id="specimens"></div>
+</aside>
+
+<div class="intro" id="intro">
+  <p class="kicker">chill · sběr pylu · čtyři roční období</p>
+  <h1>Poletuška</h1>
+  <p class="tag">Klidná hra o včelce, která poletuje krajinou a sbírá pyl rozmanitých tvarů, jak se střídají roční období.</p>
+  <button class="start-btn" id="startBtn">Vzlétnout&nbsp;🐝</button>
+  <p class="how">Veď včelku myší nebo prstem (na klávesnici šipkami / WASD). Přibliž se ke květu a pyl si sám přiletí. Žádná prohra — jen leť a objevuj.</p>
+</div>
+
+<button class="btn theme-toggle" id="themeToggle" aria-label="Přepnout den a noc">Den / noc</button>
+
+<script>
+"use strict";
+(() => {
+  const canvas = document.getElementById('scene');
+  const ctx = canvas.getContext('2d');
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let W = 0, H = 0, DPR = 1;
+
+  function resize() {
+    DPR = Math.min(2, window.devicePixelRatio || 1);
+    W = window.innerWidth; H = window.innerHeight;
+    canvas.width = Math.floor(W * DPR); canvas.height = Math.floor(H * DPR);
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+  window.addEventListener('resize', resize); resize();
+
+  /* ---------- theme ---------- */
+  const root = document.documentElement;
+  function currentThemeDark() {
+    const t = root.getAttribute('data-theme');
+    if (t) return t === 'dark';
+    return matchMedia('(prefers-color-scheme: dark)').matches;
+  }
+  document.getElementById('themeToggle').addEventListener('click', () => {
+    root.setAttribute('data-theme', currentThemeDark() ? 'light' : 'dark');
+  });
+
+  /* ---------- pollen species (real palynology) ---------- */
+  // shape drawers — grain of radius r centered at 0,0 on ctx c
+  const shapes = {
+    echinate(c, r, col) {                       // spiky sphere
+      c.fillStyle = col.body;
+      c.beginPath(); c.arc(0,0,r*0.72,0,7); c.fill();
+      c.fillStyle = col.spike;
+      const n = 14;
+      for (let i=0;i<n;i++){
+        const a = i/n*Math.PI*2;
+        const bx=Math.cos(a), by=Math.sin(a);
+        const px=-by, py=bx;
+        c.beginPath();
+        c.moveTo(bx*r*0.66 - px*r*0.11, by*r*0.66 - py*r*0.11);
+        c.lineTo(bx*r*1.02, by*r*1.02);
+        c.lineTo(bx*r*0.66 + px*r*0.11, by*r*0.66 + py*r*0.11);
+        c.closePath(); c.fill();
+      }
+      c.fillStyle = col.hi;
+      c.beginPath(); c.arc(-r*0.2,-r*0.22,r*0.2,0,7); c.fill();
+    },
+    reticulate(c, r, col) {                      // netted / honeycomb surface
+      c.fillStyle = col.body;
+      c.beginPath(); c.arc(0,0,r*0.92,0,7); c.fill();
+      c.save();
+      c.beginPath(); c.arc(0,0,r*0.92,0,7); c.clip();
+      c.strokeStyle = col.spike; c.lineWidth = Math.max(1, r*0.05);
+      const s = r*0.34;
+      for (let gy=-3;gy<=3;gy++){
+        for (let gx=-3;gx<=3;gx++){
+          const cx=gx*s*1.5, cy=gy*s*Math.sqrt(3) + (gx%2? s*Math.sqrt(3)/2:0);
+          c.beginPath();
+          for(let k=0;k<6;k++){const a=k/6*Math.PI*2;
+            const X=cx+Math.cos(a)*s*0.62, Y=cy+Math.sin(a)*s*0.62;
+            k?c.lineTo(X,Y):c.moveTo(X,Y);}
+          c.closePath(); c.stroke();
+        }
+      }
+      c.restore();
+      c.fillStyle = col.hi;
+      c.beginPath(); c.arc(-r*0.28,-r*0.3,r*0.22,0,7); c.fill();
+    },
+    triporate(c, r, col) {                        // smooth round, 3 pores
+      const g=c.createRadialGradient(-r*0.3,-r*0.3,r*0.1,0,0,r);
+      g.addColorStop(0,col.hi); g.addColorStop(0.5,col.body); g.addColorStop(1,col.spike);
+      c.fillStyle=g;
+      c.beginPath(); c.arc(0,0,r*0.9,0,7); c.fill();
+      c.fillStyle=col.spike;
+      for(let i=0;i<3;i++){const a=i/3*Math.PI*2 - Math.PI/2;
+        c.beginPath(); c.arc(Math.cos(a)*r*0.9,Math.sin(a)*r*0.9,r*0.15,0,7); c.fill();}
+    },
+    tricolpate(c, r, col) {                        // rounded triangle, 3 furrows
+      c.fillStyle=col.body;
+      c.beginPath();
+      for(let i=0;i<=60;i++){const a=i/60*Math.PI*2;
+        const rr=r*0.86*(1+0.16*Math.cos(3*a+Math.PI/2));
+        const X=Math.cos(a)*rr, Y=Math.sin(a)*rr; i?c.lineTo(X,Y):c.moveTo(X,Y);}
+      c.closePath(); c.fill();
+      c.strokeStyle=col.spike; c.lineWidth=Math.max(1.2,r*0.06);
+      for(let i=0;i<3;i++){const a=i/3*Math.PI*2+Math.PI/2;
+        c.beginPath(); c.moveTo(0,0);
+        c.lineTo(Math.cos(a)*r*0.95,Math.sin(a)*r*0.95); c.stroke();}
+      c.fillStyle=col.hi;
+      c.beginPath(); c.arc(-r*0.2,-r*0.24,r*0.18,0,7); c.fill();
+    },
+    saccate(c, r, col) {                            // central body + 2 air sacs
+      c.fillStyle=col.spike;
+      c.beginPath(); c.ellipse(-r*0.55,r*0.12,r*0.5,r*0.42,0,0,7); c.fill();
+      c.beginPath(); c.ellipse( r*0.55,r*0.12,r*0.5,r*0.42,0,0,7); c.fill();
+      c.fillStyle=col.hi2||col.hi;
+      c.beginPath(); c.ellipse(-r*0.55,r*0.12,r*0.32,r*0.26,0,0,7); c.fill();
+      c.beginPath(); c.ellipse( r*0.55,r*0.12,r*0.32,r*0.26,0,0,7); c.fill();
+      const g=c.createRadialGradient(-r*0.2,-r*0.3,r*0.1,0,0,r*0.7);
+      g.addColorStop(0,col.hi); g.addColorStop(1,col.body);
+      c.fillStyle=g;
+      c.beginPath(); c.ellipse(0,-r*0.05,r*0.5,r*0.58,0,0,7); c.fill();
+    },
+    tetrad(c, r, col) {                             // four joined grains (heather)
+      const o=r*0.42;
+      const pos=[[-o,-o],[o,-o],[-o,o],[o,o]];
+      for(const [px,py] of pos){
+        const g=c.createRadialGradient(px-r*0.15,py-r*0.15,r*0.05,px,py,r*0.5);
+        g.addColorStop(0,col.hi); g.addColorStop(1,col.body);
+        c.fillStyle=g;
+        c.beginPath(); c.arc(px,py,r*0.46,0,7); c.fill();
+        c.strokeStyle=col.spike; c.lineWidth=Math.max(1,r*0.04);
+        c.beginPath(); c.arc(px,py,r*0.46,0,7); c.stroke();
+      }
+    },
+  };
+
+  // palette per species
+  const SPECIES = [
+    // spring (0)
+    {id:'salix', name:'Vrba jíva', latin:'Salix caprea', shape:'reticulate', season:0,
+      col:{body:'#e8c34a',spike:'#a9871f',hi:'#fbe79a'}},
+    {id:'corylus', name:'Líska', latin:'Corylus avellana', shape:'triporate', season:0,
+      col:{body:'#dcd08a',spike:'#9c8f4c',hi:'#f4efc4'}},
+    {id:'taraxacum', name:'Pampeliška', latin:'Taraxacum officinale', shape:'echinate', season:0,
+      col:{body:'#f2b52a',spike:'#c07d10',hi:'#ffe28f'}},
+    // summer (1)
+    {id:'helianthus', name:'Slunečnice', latin:'Helianthus annuus', shape:'echinate', season:1,
+      col:{body:'#f0a021',spike:'#b56505',hi:'#ffd873'}},
+    {id:'papaver', name:'Mák vlčí', latin:'Papaver rhoeas', shape:'reticulate', season:1,
+      col:{body:'#d98a86',spike:'#9c3f3a',hi:'#f4c3bf'}},
+    {id:'trifolium', name:'Jetel luční', latin:'Trifolium pratense', shape:'tricolpate', season:1,
+      col:{body:'#c98ec4',spike:'#7d4478',hi:'#ecc9e8'}},
+    // autumn (2)
+    {id:'hedera', name:'Břečťan', latin:'Hedera helix', shape:'tricolpate', season:2,
+      col:{body:'#cdb26a',spike:'#8a7130',hi:'#eaddb0'}},
+    {id:'solidago', name:'Zlatobýl', latin:'Solidago virgaurea', shape:'echinate', season:2,
+      col:{body:'#e0a52c',spike:'#a06a0f',hi:'#ffd472'}},
+    {id:'calluna', name:'Vřes', latin:'Calluna vulgaris', shape:'tetrad', season:2,
+      col:{body:'#c98aa8',spike:'#7d3f5c',hi:'#eec5d8'}},
+    // winter (3)
+    {id:'pinus', name:'Borovice', latin:'Pinus sylvestris', shape:'saccate', season:3,
+      col:{body:'#e7d7a2',spike:'#b8a469',hi:'#f6eede',hi2:'#fbf5df'}},
+    {id:'galanthus', name:'Sněženka', latin:'Galanthus nivalis', shape:'triporate', season:3,
+      col:{body:'#d8e0e6',spike:'#8fa0ad',hi:'#f4f8fb'}},
+    {id:'helleborus', name:'Čemeřice', latin:'Helleborus niger', shape:'tricolpate', season:3,
+      col:{body:'#c4d2b8',spike:'#6f8460',hi:'#e6efdd'}},
+  ];
+  const speciesById = Object.fromEntries(SPECIES.map(s=>[s.id,s]));
+
+  /* ---------- assets (PNG z ComfyUI; fallback = procedurální kresba) ----------
+     Hra funguje bez souborů. Jakmile do assets/ přibude PNG se správným
+     názvem, automaticky se použije místo vektorové kresby. Viz assets/PROMPTS.md */
+  const Assets = { imgs:{} };
+  function loadAssets(){
+    const ids = ['bee'];
+    for (const sp of SPECIES){ ids.push('pollen_'+sp.id); ids.push('flower_'+sp.id); }
+    for (const id of ids){
+      const img = new Image();
+      img.onload = ()=>{ Assets.imgs[id] = img; };
+      img.onerror = ()=>{};                    // chybí = fallback, žádná chyba
+      img.src = 'assets/'+id+'.png';
+    }
+  }
+  loadAssets();
+
+  function drawGrain(c, sp, r, rot) {
+    c.save(); c.rotate(rot||0);
+    const img = Assets.imgs['pollen_'+sp.id];
+    if (img) c.drawImage(img, -r, -r, r*2, r*2);
+    else shapes[sp.shape](c, r, sp.col);
+    c.restore();
+  }
+
+  /* ---------- seasons ---------- */
+  const SEASONS = [
+    {name:'Jaro', sub:'první květy raší',
+      sky:['#bfe0c9','#e7f0c8'], skyNight:['#26414a','#33463f'],
+      ground:'#8fae5e', groundNight:'#20301f', accent:'#8bbf5a'},
+    {name:'Léto', sub:'louka v plném květu',
+      sky:['#bfe4f0','#fbecb0'], skyNight:['#2a3a54','#3e3d4e'],
+      ground:'#7ba846', groundNight:'#1d2c1a', accent:'#e2ab2c'},
+    {name:'Podzim', sub:'zlatavé dozrávání',
+      sky:['#f0d3a0','#ecc08a'], skyNight:['#43324a','#4a3630'],
+      ground:'#b98a44', groundNight:'#2b2016', accent:'#d98a3a'},
+    {name:'Zima', sub:'ticho pod jíním',
+      sky:['#d6e2ec','#eef3f7'], skyNight:['#26303f','#2e3646'],
+      ground:'#e5ecf1', groundNight:'#1b2230', accent:'#a9c2d6'},
+  ];
+
+  /* ---------- game state ---------- */
+  const state = {
+    season: 0, seasonProgress: 0, running: false,
+    pollen: 0, discovered: {}, counts: {},
+    bee: {x: W/2, y: H/2, vx:0, vy:0, tx:W/2, ty:H/2, flap:0, dir:1},
+    flowers: [], grains: [], sparkles: [], ambient: [],
+    time: 0, seasonTimer: 0,
+  };
+  const SEASON_LEN = 52; // seconds per season (chill)
+
+  const rand = (a,b)=>a+Math.random()*(b-a);
+  const pick = arr => arr[(Math.random()*arr.length)|0];
+
+  function seasonSpecies(s){ return SPECIES.filter(sp=>sp.season===s); }
+
+  function spawnField() {
+    state.flowers.length = 0; state.grains.length = 0;
+    const sps = seasonSpecies(state.season);
+    const count = 7;
+    for (let i=0;i<count;i++){
+      const sp = sps[i % sps.length];
+      const fx = rand(W*0.08, W*0.92);
+      const fy = rand(H*0.42, H*0.9);
+      state.flowers.push({x:fx, y:fy, sp, sway:rand(0,7), emit:rand(0,2), scale:rand(0.85,1.25)});
+    }
+    // ambient motes
+    state.ambient.length = 0;
+    const na = reduceMotion?24:60;
+    for(let i=0;i<na;i++) state.ambient.push({
+      x:rand(0,W), y:rand(0,H), z:rand(0.3,1), vx:rand(-8,8), vy:rand(-4,10),
+      r:rand(1,2.6), ph:rand(0,7)
+    });
+  }
+
+  function emitGrain(f){
+    if (state.grains.length > 90) return;
+    state.grains.push({
+      x:f.x+rand(-14,14), y:f.y+rand(-18,-2), sp:f.sp,
+      vx:rand(-10,10), vy:rand(-16,-6), r:rand(9,14),
+      rot:rand(0,7), spin:rand(-1,1), life:0, caught:false, hp:rand(9,17)
+    });
+  }
+
+  function addSparkle(x,y,col){
+    const n = reduceMotion?4:9;
+    for(let i=0;i<n;i++){const a=Math.random()*7,s=rand(30,120);
+      state.sparkles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:0,max:rand(0.4,0.9),col});}
+  }
+
+  function collect(g){
+    g.caught = true;
+    state.pollen++;
+    state.counts[g.sp.id] = (state.counts[g.sp.id]||0)+1;
+    const isNew = !state.discovered[g.sp.id];
+    state.discovered[g.sp.id] = true;
+    state.seasonProgress = Math.min(1, state.seasonProgress + 0.016);
+    addSparkle(g.x, g.y, g.sp.col.hi);
+    updateHUD(isNew);
+    if (isNew) flashHint(`Nový druh: ${g.sp.name}!`);
+  }
+
+  /* ---------- input ---------- */
+  const keys = {};
+  function pointer(e){
+    const t = e.touches ? e.touches[0] : e;
+    if (!t) return;
+    state.bee.tx = t.clientX; state.bee.ty = t.clientY;
+  }
+  canvas.addEventListener('mousemove', pointer);
+  canvas.addEventListener('touchmove', e=>{pointer(e); e.preventDefault();}, {passive:false});
+  canvas.addEventListener('touchstart', e=>{pointer(e); e.preventDefault();}, {passive:false});
+  addEventListener('keydown', e=>{keys[e.key.toLowerCase()]=true;});
+  addEventListener('keyup', e=>{keys[e.key.toLowerCase()]=false;});
+
+  /* ---------- update ---------- */
+  function update(dt){
+    state.time += dt;
+    // season timer
+    state.seasonTimer += dt;
+    if (state.seasonTimer >= SEASON_LEN){
+      state.seasonTimer = 0;
+      state.season = (state.season+1)%4;
+      state.seasonProgress = 0;
+      spawnField();
+      updateHUD(false);
+      flashHint(`${SEASONS[state.season].name} — ${SEASONS[state.season].sub}`);
+    }
+    state.seasonProgress = Math.max(state.seasonProgress, state.seasonTimer/SEASON_LEN);
+
+    const bee = state.bee;
+    // keyboard target nudging
+    const kx=(keys['arrowright']||keys['d']?1:0)-(keys['arrowleft']||keys['a']?1:0);
+    const ky=(keys['arrowdown']||keys['s']?1:0)-(keys['arrowup']||keys['w']?1:0);
+    if (kx||ky){ bee.tx=Math.min(W,Math.max(0,bee.tx+kx*420*dt)); bee.ty=Math.min(H,Math.max(0,bee.ty+ky*420*dt)); }
+    // spring toward target
+    const ax=(bee.tx-bee.x)*10, ay=(bee.ty-bee.y)*10;
+    bee.vx=(bee.vx+ax*dt)*0.86; bee.vy=(bee.vy+ay*dt)*0.86;
+    bee.x+=bee.vx*dt; bee.y+=bee.vy*dt;
+    if (Math.abs(bee.vx)>4) bee.dir = bee.vx>0?1:-1;
+    bee.flap += dt*(reduceMotion?14:26);
+
+    // flowers emit
+    for(const f of state.flowers){
+      f.emit -= dt;
+      if (f.emit<=0){ f.emit=rand(1.4,3.6); if(Math.random()<0.85) emitGrain(f); }
+    }
+
+    // grains
+    const magR2 = 130*130;
+    for(const g of state.grains){
+      g.life+=dt; g.rot+=g.spin*dt;
+      if(!g.caught){
+        const dx=bee.x-g.x, dy=bee.y-g.y, d2=dx*dx+dy*dy;
+        if (d2 < 26*26){ collect(g); continue; }
+        if (d2 < magR2){ const d=Math.sqrt(d2)||1; const pull=(1-d/130)*260;
+          g.vx+=dx/d*pull*dt; g.vy+=dy/d*pull*dt; }
+        else { g.vy += 10*dt; } // gentle float-fall
+        g.vx*=0.98; g.vy*=0.98;
+        g.x+=g.vx*dt; g.y+=g.vy*dt;
+        if (g.y>H+30||g.x<-30||g.x>W+30) g.hp=-1;
+        g.hp-=dt*0.35;
+      }
+    }
+    state.grains = state.grains.filter(g=>!g.caught && g.hp>0);
+
+    // sparkles
+    for(const s of state.sparkles){ s.life+=dt; s.vy+=60*dt; s.x+=s.vx*dt; s.y+=s.vy*dt; }
+    state.sparkles = state.sparkles.filter(s=>s.life<s.max);
+
+    // ambient
+    for(const a of state.ambient){
+      a.ph+=dt; a.x+=a.vx*a.z*dt; a.y+=a.vy*a.z*dt;
+      if(a.y>H+10){a.y=-10;a.x=rand(0,W);} if(a.x<-10)a.x=W+10; if(a.x>W+10)a.x=-10;
+    }
+  }
+
+  /* ---------- render ---------- */
+  function lerpHex(h1,h2,t){
+    const a=parseInt(h1.slice(1),16),b=parseInt(h2.slice(1),16);
+    const r=Math.round((a>>16)+(((b>>16)-(a>>16))*t));
+    const g=Math.round(((a>>8)&255)+((((b>>8)&255)-((a>>8)&255))*t));
+    const c=Math.round((a&255)+(((b&255)-(a&255))*t));
+    return `rgb(${r},${g},${c})`;
+  }
+
+  function render(){
+    const night = currentThemeDark();
+    const S = SEASONS[state.season];
+    const sky = night?S.skyNight:S.sky;
+    const grd = night?S.groundNight:S.ground;
+
+    const g = ctx.createLinearGradient(0,0,0,H);
+    g.addColorStop(0, sky[0]); g.addColorStop(1, sky[1]);
+    ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+
+    // sun / moon
+    ctx.save();
+    ctx.globalAlpha = night?0.5:0.8;
+    const cx=W*0.8, cy=H*0.2, cr=Math.min(W,H)*0.09;
+    const gg=ctx.createRadialGradient(cx,cy,0,cx,cy,cr*3);
+    gg.addColorStop(0, night?'#f0e4c8':'#fff6d8'); gg.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.fillStyle=gg; ctx.beginPath(); ctx.arc(cx,cy,cr*3,0,7); ctx.fill();
+    ctx.globalAlpha = night?0.85:1;
+    ctx.fillStyle = night?'#f2ead0':'#fff4cf';
+    ctx.beginPath(); ctx.arc(cx,cy,cr,0,7); ctx.fill();
+    ctx.restore();
+
+    // ground
+    ctx.fillStyle = grd;
+    ctx.beginPath();
+    ctx.moveTo(0,H);
+    ctx.lineTo(0,H*0.72);
+    for(let x=0;x<=W;x+=40){ ctx.lineTo(x, H*0.72 + Math.sin(x*0.01+state.time*0.2)*6); }
+    ctx.lineTo(W,H); ctx.closePath(); ctx.fill();
+
+    // ambient motes
+    ctx.save();
+    for(const a of state.ambient){
+      ctx.globalAlpha = 0.12+0.18*a.z*(0.6+0.4*Math.sin(a.ph));
+      ctx.fillStyle = night? '#ffe9a8' : '#ffffff';
+      ctx.beginPath(); ctx.arc(a.x,a.y,a.r*a.z,0,7); ctx.fill();
+    }
+    ctx.restore();
+
+    // flowers
+    for(const f of state.flowers) drawFlower(f, night);
+
+    // grains
+    for(const gg2 of state.grains){
+      ctx.save();
+      ctx.translate(gg2.x,gg2.y);
+      ctx.shadowColor='rgba(0,0,0,0.15)'; ctx.shadowBlur=6; ctx.shadowOffsetY=2;
+      drawGrain(ctx, gg2.sp, gg2.r, gg2.rot);
+      ctx.restore();
+    }
+
+    // sparkles
+    for(const s of state.sparkles){
+      const t=1-s.life/s.max;
+      ctx.globalAlpha=t; ctx.fillStyle=s.col;
+      ctx.beginPath(); ctx.arc(s.x,s.y,2.4*t+0.5,0,7); ctx.fill();
+    }
+    ctx.globalAlpha=1;
+
+    drawBee(state.bee, night);
+  }
+
+  function drawFlower(f, night){
+    const sway = Math.sin(state.time*0.8+f.sway)*4;
+    const x=f.x, y=f.y, sc=f.scale;
+    ctx.save(); ctx.translate(x,y);
+    // stem
+    ctx.strokeStyle = night?'#3a5a34':'#4e7a3a'; ctx.lineWidth=3*sc;
+    ctx.beginPath(); ctx.moveTo(0,60*sc); ctx.quadraticCurveTo(sway,20*sc,sway,-2*sc); ctx.stroke();
+    ctx.translate(sway,-2*sc);
+    const fimg = Assets.imgs['flower_'+f.sp.id];
+    if (fimg){ const s=34*sc; ctx.drawImage(fimg,-s,-s,s*2,s*2); ctx.restore(); return; }
+    // petals
+    const petalCol = f.sp.col.body, coreCol=f.sp.col.spike;
+    const np=6;
+    for(let i=0;i<np;i++){
+      ctx.save(); ctx.rotate(i/np*Math.PI*2 + Math.sin(state.time+f.sway)*0.03);
+      ctx.fillStyle=petalCol;
+      ctx.globalAlpha = night?0.85:1;
+      ctx.beginPath(); ctx.ellipse(0,-13*sc,6*sc,12*sc,0,0,7); ctx.fill();
+      ctx.restore();
+    }
+    ctx.fillStyle=coreCol; ctx.globalAlpha=1;
+    ctx.beginPath(); ctx.arc(0,0,6.5*sc,0,7); ctx.fill();
+    ctx.fillStyle=f.sp.col.hi;
+    ctx.beginPath(); ctx.arc(-2*sc,-2*sc,2.4*sc,0,7); ctx.fill();
+    ctx.restore();
+  }
+
+  function drawBee(bee, night){
+    const flap = Math.sin(bee.flap)*0.6;
+    ctx.save();
+    ctx.translate(bee.x, bee.y + Math.sin(state.time*3)*2);
+    ctx.scale(bee.dir, 1);
+    // shadow glow at night
+    if (night){
+      const gg=ctx.createRadialGradient(0,0,0,0,0,40);
+      gg.addColorStop(0,'rgba(255,220,120,0.35)'); gg.addColorStop(1,'rgba(255,220,120,0)');
+      ctx.fillStyle=gg; ctx.beginPath(); ctx.arc(0,0,40,0,7); ctx.fill();
+    }
+    // sprite z ComfyUI, když je k dispozici (křídla si necháme procedurální,
+    // ať včelka pořád mává)
+    const bimg = Assets.imgs['bee'];
+    // wings
+    ctx.fillStyle = night?'rgba(220,235,255,0.55)':'rgba(210,232,245,0.7)';
+    for(const s of [-1,1]){
+      ctx.save(); ctx.rotate(s*(0.5+flap));
+      ctx.beginPath(); ctx.ellipse(2, -12, 7, 13, 0, 0, 7); ctx.fill();
+      ctx.restore();
+    }
+    if (bimg){ ctx.drawImage(bimg, -22, -20, 44, 40); ctx.restore(); return; }
+    // body
+    ctx.fillStyle='#3a2a16';
+    ctx.beginPath(); ctx.ellipse(0,0,15,11,0,0,7); ctx.fill();
+    // stripes
+    ctx.fillStyle='#f2b52a';
+    for(const sx of [-4.5,3]){
+      ctx.beginPath(); ctx.ellipse(sx,0,3,10.2,0,0,7); ctx.fill();
+    }
+    ctx.fillStyle='#f2b52a';
+    ctx.beginPath(); ctx.ellipse(-10,0,4,8,0,0,7); ctx.fill();
+    // head
+    ctx.fillStyle='#2a1e10';
+    ctx.beginPath(); ctx.arc(12,-1,6,0,7); ctx.fill();
+    // eye
+    ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(14,-2,1.7,0,7); ctx.fill();
+    ctx.restore();
+  }
+
+  /* ---------- HUD ---------- */
+  const el = id=>document.getElementById(id);
+  function updateHUD(){
+    el('pollenCount').textContent = state.pollen;
+    el('speciesCount').textContent = Object.keys(state.discovered).length+'/'+SPECIES.length;
+    el('seasonName').textContent = SEASONS[state.season].name;
+    el('seasonSub').textContent = SEASONS[state.season].sub;
+    el('seasonMeter').style.width = Math.round(state.seasonProgress*100)+'%';
+  }
+  let hintTimer=0;
+  function flashHint(txt){
+    const h=el('hudHint'); h.textContent=txt; h.style.opacity='1'; hintTimer=4;
+  }
+
+  /* ---------- journal ---------- */
+  const journal = el('journal');
+  function buildJournal(){
+    const wrap = el('specimens'); wrap.innerHTML='';
+    for(const sp of SPECIES){
+      const found = state.discovered[sp.id];
+      const card = document.createElement('div');
+      card.className='specimen'+(found?'':' locked');
+      const cv = document.createElement('canvas'); cv.width=148; cv.height=148;
+      const c=cv.getContext('2d'); c.setTransform(2,0,0,2,74,74);
+      if (found){ drawGrain(c, sp, 30, 0.3); }
+      else { c.fillStyle='rgba(128,110,80,0.3)'; c.beginPath(); c.arc(0,0,26,0,7); c.fill();
+        c.fillStyle='rgba(128,110,80,0.6)'; c.font='28px Georgia'; c.textAlign='center'; c.textBaseline='middle'; c.fillText('?',0,2); }
+      card.appendChild(cv);
+      const nm=document.createElement('p'); nm.className='name'; nm.textContent=found?sp.name:'Neznámý';
+      const lt=document.createElement('p'); lt.className='latin'; lt.textContent=found?sp.latin:'—';
+      const shp=document.createElement('div'); shp.className='shape'; shp.textContent=found?shapeLabel(sp.shape):'';
+      card.appendChild(nm); card.appendChild(lt); card.appendChild(shp);
+      if(found){ const cnt=document.createElement('div'); cnt.className='count';
+        cnt.textContent='×'+(state.counts[sp.id]||0); card.appendChild(cnt); }
+      wrap.appendChild(card);
+    }
+    el('journalSub').textContent = Object.keys(state.discovered).length+' z '+SPECIES.length+' druhů';
+  }
+  function shapeLabel(s){
+    return {echinate:'ostnité',reticulate:'síťované',triporate:'třípórové',
+      tricolpate:'tříbrázdé',saccate:'s měchýřky',tetrad:'tetráda'}[s]||s;
+  }
+  function openJournal(){ buildJournal(); journal.classList.add('open'); }
+  function closeJournal(){ journal.classList.remove('open'); }
+  el('journalBtn').addEventListener('click', openJournal);
+  el('journalClose').addEventListener('click', closeJournal);
+
+  /* ---------- loop ---------- */
+  let last=0;
+  function frame(ts){
+    const dt = Math.min(0.05, (ts-last)/1000||0); last=ts;
+    if (state.running){
+      update(dt);
+      if (hintTimer>0){ hintTimer-=dt; if(hintTimer<=0) el('hudHint').style.opacity='0.72'; }
+    }
+    render();
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  /* ---------- start ---------- */
+  el('startBtn').addEventListener('click', ()=>{
+    el('intro').classList.add('hide');
+    el('hud').hidden=false;
+    state.running=true;
+    state.bee.x=state.bee.tx=W/2; state.bee.y=state.bee.ty=H*0.4;
+    spawnField(); updateHUD();
+    flashHint('Jaro — první květy raší');
+  });
+})();
+</script>

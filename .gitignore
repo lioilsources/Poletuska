@@ -1,0 +1,12 @@
+# Vygenerované assety z ComfyUI — zůstávají lokální, netlačíme je do repa.
+# Zdroje (prompty, manifest) verzujeme, hotové PNG ne.
+assets/*.png
+
+# macOS
+.DS_Store
+
+# Python (driver skript pro ComfyUI)
+__pycache__/
+*.pyc
+venv/
+.venv/

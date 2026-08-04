@@ -1,0 +1,36 @@
+{
+  "note": "Hra načítá assets/<id>.png. Chybějící soubor = fallback na procedurální kresbu. Generuj čtvercové PNG s průhledným pozadím.",
+  "recommend_size": 1024,
+  "assets": [
+    { "id": "bee", "type": "sprite", "desc": "včelka, pohled shora, roztomilá" },
+
+    { "id": "pollen_salix",     "type": "pollen", "shape": "reticulate", "color": "zlatožlutá",  "plant": "Salix caprea (vrba jíva)" },
+    { "id": "pollen_corylus",   "type": "pollen", "shape": "triporate",  "color": "bledě žlutá", "plant": "Corylus avellana (líska)" },
+    { "id": "pollen_taraxacum", "type": "pollen", "shape": "echinate",   "color": "oranžová",    "plant": "Taraxacum officinale (pampeliška)" },
+
+    { "id": "pollen_helianthus","type": "pollen", "shape": "echinate",   "color": "sytě oranžová","plant": "Helianthus annuus (slunečnice)" },
+    { "id": "pollen_papaver",   "type": "pollen", "shape": "reticulate", "color": "červená",     "plant": "Papaver rhoeas (mák vlčí)" },
+    { "id": "pollen_trifolium", "type": "pollen", "shape": "tricolpate", "color": "fialová",     "plant": "Trifolium pratense (jetel luční)" },
+
+    { "id": "pollen_hedera",    "type": "pollen", "shape": "tricolpate", "color": "olivově béžová","plant": "Hedera helix (břečťan)" },
+    { "id": "pollen_solidago",  "type": "pollen", "shape": "echinate",   "color": "zlatá",       "plant": "Solidago virgaurea (zlatobýl)" },
+    { "id": "pollen_calluna",   "type": "pollen", "shape": "tetrad",     "color": "růžová",      "plant": "Calluna vulgaris (vřes)" },
+
+    { "id": "pollen_pinus",     "type": "pollen", "shape": "saccate",    "color": "krémová",     "plant": "Pinus sylvestris (borovice)" },
+    { "id": "pollen_galanthus", "type": "pollen", "shape": "triporate",  "color": "bledě modrá", "plant": "Galanthus nivalis (sněženka)" },
+    { "id": "pollen_helleborus","type": "pollen", "shape": "tricolpate", "color": "bledě zelená","plant": "Helleborus niger (čemeřice)" },
+
+    { "id": "flower_salix",     "type": "flower", "plant": "vrba jíva — žluté jehnědy" },
+    { "id": "flower_corylus",   "type": "flower", "plant": "líska — jehnědy" },
+    { "id": "flower_taraxacum", "type": "flower", "plant": "pampeliška — žlutý úbor" },
+    { "id": "flower_helianthus","type": "flower", "plant": "slunečnice" },
+    { "id": "flower_papaver",   "type": "flower", "plant": "vlčí mák — červený" },
+    { "id": "flower_trifolium", "type": "flower", "plant": "jetel luční — růžová hlavička" },
+    { "id": "flower_hedera",    "type": "flower", "plant": "břečťan — zelenkavé okolíky" },
+    { "id": "flower_solidago",  "type": "flower", "plant": "zlatobýl — žlutá lata" },
+    { "id": "flower_calluna",   "type": "flower", "plant": "vřes — drobné růžové zvonky" },
+    { "id": "flower_pinus",     "type": "flower", "plant": "borovice — samčí šištice" },
+    { "id": "flower_galanthus", "type": "flower", "plant": "sněženka — bílý převislý květ" },
+    { "id": "flower_helleborus","type": "flower", "plant": "čemeřice — bílý pětičetný květ" }
+  ]
+}
