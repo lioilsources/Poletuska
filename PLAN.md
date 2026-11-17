@@ -69,7 +69,7 @@ Až poběží ComfyUI, Claude napíše `assets/generate.py`, který:
 Spuštění (po startu ComfyUI):
 
 ```bash
-cd /Volumes/YOTTA/Dev/VceliRise
+cd $DEV_ROOT/VceliRise
 python3 assets/generate.py            # celá dávka
 python3 assets/generate.py taraxacum  # jen vybrané (re-roll)
 ```
